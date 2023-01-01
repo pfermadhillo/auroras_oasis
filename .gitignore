@@ -1,4 +1,4 @@
 # Ignore the build directory
 /build
 
-www_server/config.js
+www_server/www/config.js
