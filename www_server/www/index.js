@@ -81,6 +81,7 @@ MongoClient.connect(config.db, (err, client) => {
   const testColl = db.collection('testColl')
   const userColl = db.collection('userColl')
   const crystalColl = db.collection('crystalColl')
+  const ownedCrystalColl = db.collection('ownedCrystalColl')
 
   function refreshCrystals(res){
     var dtNow = Date.now()
@@ -346,22 +347,48 @@ MongoClient.connect(config.db, (err, client) => {
   })
 
   app.get('/sendDelete', (req, res) => {
-    // let email = req.body.email;
-    // var count = 10
     console.log("sendDelete query: ",req.query)
     if(req.query && req.query.id){
-      // count = req.query.count
-      crystalColl.deleteOne( { "_id" : ObjectId(req.query.id) } )
-      // crystalColl.deleteOne( { "_id" : req.query.id} )
+      var id = ObjectId(req.query.id)
+      crystalColl.find({ "_id": id }).toArray()
       .then(result => {
-        console.log("sendDelete result:", result)
-        // res.send(JSON.stringify(result) + 'Deleted some crystals!')
-        if (result.deletedCount) {res.send(req.query.id)}
+        // will do transfer to other db here
+        console.log("sendDelete find result: ",result);
+        if(req.query.token){
+          result[0].token = req.query.token
+          ownedCrystalColl.insertOne(result[0])
+        }
+        
+        crystalColl.deleteOne({ "_id": id  })
+          .then(result => {
+          console.log("sendDelete result:", result)
+          if (result.deletedCount) {
+            res.send(req.query.id)
+          }
+        })
+        .catch(error => console.error(error))
       })
       .catch(error => console.error(error))
     }
-    // inventCountCrystals(res, count)
-    // send.res
+    // // let email = req.body.email;
+    // // var count = 10
+    // console.log("sendDelete query: ",req.query)
+    // if(req.query && req.query.id){
+    //   // count = req.query.count
+    //   crystalColl.deleteOne( { "_id" : ObjectId(req.query.id) } )
+    //   // crystalColl.deleteOne( { "_id" : req.query.id} )
+    //   .then(result => {
+    //     console.log("sendDelete result:", result)
+    //     // res.send(JSON.stringify(result) + 'Deleted some crystals!')
+    //     if (result.deletedCount) {
+    //       res.send(req.query.id)
+    //       //db.employees.remove({ "_id": 3 })
+    //     }
+    //   })
+    //   .catch(error => console.error(error))
+    // }
+    // // inventCountCrystals(res, count)
+    // // send.res
   })
 
 

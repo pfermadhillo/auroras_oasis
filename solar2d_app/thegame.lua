@@ -107,7 +107,9 @@ local function networkListenerSendDelete( event )
 end
 local function sendDelete( id )
 	-- body
-	network.request( homeURL .. "/sendDelete?id="..id, "GET", networkListenerSendDelete )
+	network.request( homeURL .. "/sendDelete?id=" .. id .. "&token=" .. token, 
+		"GET", 
+		networkListenerSendDelete )
 
 end
 
