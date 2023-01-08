@@ -17,12 +17,13 @@ local attempts = 0
 -- 	{lat:30.6389954,long:-97.6856937},
 -- 	{lat:30.6389954,long:-97.6856937}}
 -- local markers = {{30.6389954,-97.6856937},{30.6389954,-97.6856937}}
- imgFiles = {"blue_crystal1.png","orange_crystal2.png"}
+ -- imgFiles = {"blue_crystal1.png","orange_crystal2.png"}
 
  homeURL = "https://auroras.fusionbombsderp.com"
  saveFile = "AuroraOasisSave.id"
 
  token = composer.getVariable( "token" )
+ color = composer.getVariable( "color" )
 
 
 print ("JGDEBUG " .. " running ")
@@ -186,7 +187,7 @@ local function placeAllMarkers( currentLocation )
 					and not isEmpty(line[4]) 
 					then
 				options["subtitle"] = "This is crystal#: " .. i
-				options["imageFile"] = "img/" .. imgFiles[line[3]]
+				options["imageFile"] = "img/" .. line[3]
 				-- options["_id"] = line[4]
 				local result = myMap:addMarker( line[1],line[2], options )
 				table.insert(markers[i], result)
@@ -262,7 +263,7 @@ local function networkListenerGetCrystals( event )
 		for i=1,table.getn(decode) do
 			-- print(i)
 			local line = decode[i]
-			table.insert(markers, {line.lat, line.long, line.type, line._id})
+			table.insert(markers, {line.lat, line.long, line.filename, line._id})
 		end
 		placeAllMarkers(getCurrentLocation())
 		-- print("decide: #: " #decode .. "," .. decode)
@@ -303,6 +304,14 @@ local function handleButtonEvent( event )
         getCrystals()
     end
 end
+		-- Function to handle button events
+local function handleGotoListButtonEvent ( event )
+ 
+    if ( "ended" == event.phase ) then
+        -- print( "Button was pressed and released" )
+        composer.gotoScene( "listcrystals" )
+    end
+end
 
 -- local function mapSearchLocationHandler(event) 
 -- 	if ( event.isError ) then 
@@ -334,7 +343,8 @@ function scene:create( event )
 
 	local sceneGroup = self.view 
 	print ("JGDEBUG " .. "scene:create")
-
+	-- display.setDefault( "background", unpack(color.bkgdPurple) )
+	display.setDefault( "background", unpack(color.bkgd) )
 	--your code here; define display objects, sprites, physics bodies, etc - but don't play any sounds or animations yet. 
 	-- local labelColor = { default={ 1, 1, 1 }, over={ 0, 0, 0, 0.5 } }
 	-- local tabButtons = {
@@ -413,12 +423,12 @@ function scene:show( event )
 		local testY7 = display.newText( "500", 50, 500, native.systemFont, 16 )
 
 		-- part of the map will go below the standard viewport
-		myMap = native.newMapView(0, 0,display.contentWidth , display.contentHeight -40) 
+		myMap = native.newMapView(0, 0,display.contentWidth -10 , display.contentHeight -100) 
 		if myMap then 
 			myMap.mapType = "standard" 
 			myMap.x = display.contentCenterX 
 			-- navBar height is 52 per api doc // deleted!
-			myMap.y = display.contentCenterY - 40
+			myMap.y = display.contentCenterY 
 			local currentLocation = maplocationHandler() 
 			-- local myText = display.newText( "Hello World!", 100, 20, native.systemFont, 16 )
 			-- myText:setFillColor( 1, 0, 0 )
@@ -435,7 +445,7 @@ function scene:show( event )
 			sceneGroup:insert( myMap )
 			
 		else 
-			native.showAlert( "Simulator", "Maps are only avaiable on device.", { "Okay" } ) 
+			-- native.showAlert( "Simulator", "Maps are only avaiable on device.", { "Okay" } ) 
 		end 
 
 		 
@@ -448,10 +458,14 @@ function scene:show( event )
 		        -- Properties for a rounded rectangle button
 		        shape = "roundedRect",
 		        width = 200,
-		        height = 40,
+		        height = 30,
 		        cornerRadius = 2,
-		        fillColor = { default={0.6,0.6,0.8,1}, over={0.9,0.9,1,0.9} },
-		        strokeColor = { default={0.8,0.8,0.99,0.2}, over={1,1,1,1} },
+
+				-- fillColor = { default={0.6,0.6,0.8,1}, over={0.9,0.9,1,0.9} }, 
+				-- strokeColor = { default={0.8,0.8,0.99,0.2}, over={1,1,1,1} },
+		        fillColor = { default=color.btnFill, over=color.btnFillOver },
+		        strokeColor = { default=color.btnStroke, over=color.btnStrokeOver},
+		        labelColor = { default=color.btnLabel, over=color.btnLabelOver },
 		        strokeWidth = 4
 		    }
 		)
@@ -464,6 +478,32 @@ function scene:show( event )
 		button1:setLabel( "Search For Crystals" )
 		sceneGroup:insert( button1 )
 
+
+		-- Create the widget
+		local gotoListCrystalsButton = widget.newButton(
+		    {
+		        label = "button",
+		        onEvent = handleGotoListButtonEvent,
+		        emboss = false,
+		        -- Properties for a rounded rectangle button
+		        shape = "roundedRect",
+		        width = 200,
+		        height = 30,
+		        cornerRadius = 2,
+		        fillColor = { default=color.btnFill, over=color.btnFillOver },
+		        strokeColor = { default=color.btnStroke, over=color.btnStrokeOver},
+		        labelColor = { default=color.btnLabel, over=color.btnLabelOver },
+		        strokeWidth = 4
+		    }
+		)
+		 
+		-- Center the button
+		gotoListCrystalsButton.x = display.contentCenterX
+		gotoListCrystalsButton.y = 20
+		 
+		-- Change the button's label text
+		gotoListCrystalsButton:setLabel( "Goto Crystals" )
+		sceneGroup:insert( gotoListCrystalsButton )
 
 	end 
 end 

@@ -24,6 +24,23 @@ local mime = require( "mime" )
 
 local saveFile = "AuroraOasisSave.id"
 
+color = {
+	blue={138/255, 201/255, 209/255},
+	bkgdPurple={128/255, 25/255, 128/255},
+	bkgd={230/255, 166/255, 245/255},
+	scrollview={148/255, 45/255, 148/255,1},
+	btnFill={168/255, 65/255, 168/255,1},
+	btnFillOver={0.9,0.6,0.9,0.9},
+	btnStroke={188/255, 85/255, 188/255,0.2},
+	btnStrokeOver={1,1,1,1},
+	btnLabel={138/255, 201/255, 209/255},
+	btnLabelOver={0,0,1,1}
+}
+composer.setVariable( "color", color ) 
+
+-- fillColor = { default={0.6,0.6,0.8,1}, over={0.9,0.9,1,0.9} }, 
+-- strokeColor = { default={0.8,0.8,0.99,0.2}, over={1,1,1,1} },
+-- labelColor = { default={ 1, 1, 1 }, over={ 0, 0, 0, 0.5 } }
 
 local function isEmpty(s)
   return s == nil or s == ''

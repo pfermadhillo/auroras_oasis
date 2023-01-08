@@ -2,6 +2,7 @@ const express = require('express')
 const app = express()
 const port = 3030
 const MongoClient = require('mongodb').MongoClient
+const mongoose = require('mongoose');
 const config = require('./config');
 const session = require('express-session');
 const crypto = require('crypto');
@@ -12,6 +13,8 @@ var validate = require('jsonschema').validate;
 // console.log(validate(4, {"type": "number"}));
 // console.log(v.validate(p, schema));
 var crystalSchema = require("./crystalSchema")
+var crystalArray = require("./crystalArray")
+const Crystal = mongoose.model('Crystal', crystalSchema);
 
 app.set('view engine', 'ejs')
 
@@ -85,8 +88,8 @@ MongoClient.connect(config.db, (err, client) => {
 
   function refreshCrystals(res){
     var dtNow = Date.now()
-    var tooOld = dtNow 
-    // var tooOld = dtNow - 12 * oneHour
+    // var tooOld = dtNow 
+    var tooOld = dtNow - 12 * oneHour
     crystalColl.deleteMany( { timeCreated: { $lt: tooOld } } )
     .then(result => {
       console.log("refreshCrystals result:", result, dtNow, tooOld)
@@ -100,19 +103,29 @@ MongoClient.connect(config.db, (err, client) => {
   function inventCountCrystals(res, count=10, me=false, didDelete=""){
     bulkUpdateOps = [];  
     for (var i = 0; i < count; i++) {
-      var crystalElem = {}
+      var crystalElem, gps = {}
       if(me){
-        crystalElem = getRndGPSNearMe()
+        gps = getRndGPSNearMe()
       }else{
-        crystalElem = getRndGPSinTexas()
+        gps = getRndGPSinTexas()
       }
-      
+
+
+
       // crystalElem.lat = getRndGPSinM(30.6389954, 1000)
       // crystalElem.long = getRndGPSinM(-97.6856937, 1000)
-      crystalElem.type = getRndInteger(1,2)
-      crystalElem.timeCreated = Date.now()
+      var type = getRndInteger(1,crystalArray.arr.length)
+      crystalElem = crystalArray.arr[type-1]
+      console.log("crystalElem:", crystalElem)
+      crystalElem.lat = gps.lat
+      crystalElem.long = gps.long
+      crystalElem.condition = "meh"
+      crystalElem.grading = getRndInteger(1,40) + getRndInteger(0,60)
+      // crystalElem.timeCreated = Date.now()
 
-      bulkUpdateOps.push({ "insertOne": { "document": crystalElem } });
+      const crystal = new Crystal(crystalElem);
+
+      bulkUpdateOps.push({ "insertOne": { "document": crystal } });
     }
 
     if (bulkUpdateOps.length > 0) {
@@ -128,7 +141,9 @@ MongoClient.connect(config.db, (err, client) => {
     // const cursor = db.collection('quotes').find()
     // console.log(cursor)
     
-    res.send('Hello World!')
+    // res.send('Hello World!')
+    res.render('index.ejs', {})
+
   })
 
 
@@ -137,7 +152,7 @@ MongoClient.connect(config.db, (err, client) => {
     // console.log(cursor)
     
     // res.send('Create a user:')
-    res.render('index.ejs', {})
+    res.render('createuser.ejs', {})
   })
 
   app.post('/newacct', urlencodedParser, function (req, res) {
@@ -390,6 +405,36 @@ MongoClient.connect(config.db, (err, client) => {
     // // inventCountCrystals(res, count)
     // // send.res
   })
+
+
+  app.post('/postMyCrystals', function(req, res) {
+    // Capture the input fields
+
+    let token = req.body.token;
+    // Ensure the input fields exists and are not empty
+    if (token ) {
+      // console.log("query: ", mylat, mylong, gpsRange)
+      // var testVar = mylat+gpsRange
+      // console.log("query2: ", testVar)
+      // { price: { $ne: 1.99, $exists: true } }
+      ownedCrystalColl.find({ "token": token  }).toArray()
+      .then(results => {
+        // console.log("after get", results)
+
+        if(results){
+          console.log("postMyCrystals results: ", JSON.stringify(results) ); // print out what it sends back
+
+          res.send(JSON.stringify(results))
+        }else if(!results){
+          console.log("Not in docs");
+        }
+      })
+      .catch(error => console.error(error))
+    } else {
+      res.send('Failure to parse token!');
+      res.end();
+    }
+  });
 
 
 
