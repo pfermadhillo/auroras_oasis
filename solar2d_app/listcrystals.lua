@@ -27,10 +27,53 @@ local attempts = 0
  token = composer.getVariable( "token" )
  color = composer.getVariable( "color" )
 
+local function refreshScrollView(  )
+	if(scrollView) then 
+		for i=scrollView.numChildren,1 do
+		    scrollView[i]:removeSelf()
+		end
+		scrollView = nil
+	end
+	
+	myWidth = display.contentWidth - 10
+	scrollView = widget.newScrollView(
+	    {
+	        top = 40,
+	        left = 5,
+	        width = myWidth,
+	        height = display.contentHeight-40,
+	        scrollWidth = myWidth,
+	        scrollHeight = 800,
+	        listener = scrollListener,
+	        horizontalScrollDisabled = true,
+	        backgroundColor = { unpack(color.scrollview) }
+	    }
+	)
+end
 
+
+local function networkListenerSendWholesale( event )
+	if ( "ended" == event.phase ) then
+        -- print( "Button was pressed and released" )
+        composer.gotoScene( "listcrystals" )
+    end
+end
+local function handleWholesaleButtonEvent( event , id )
+	-- body
+	print("handleWholesaleButtonEvent", id)
+	network.request( homeURL .. "/sendWholesale?id=" .. id , 
+		"GET", 
+		networkListenerSendWholesale )
+end
+
+local function handleAuctionButtonEvent( event )
+	-- body
+end
 
 local function networkListenerGetMyCrystals( event )
- 
+ 	-- first, wipe scrollview, then fill it back up
+	-- print ("scrollView.numChildren: ",scrollView.numChildren)
+	refreshScrollView()
     if ( event.isError ) then
         print( "Network error: ", event.response )
     else
@@ -45,11 +88,7 @@ local function networkListenerGetMyCrystals( event )
 		-- -- print("decide: #: " .. table.getn(decode) )
 		-- markers = {}
 
-		-- first, wipe scrollview, then fill it back up
-		print ("scrollView.numChildren: ",scrollView.numChildren)
-		for i=scrollView.numChildren,1 do
-		    scrollView[i]:removeSelf()
-		end
+		
 
 
 		for i=1,table.getn(decode) do
@@ -69,7 +108,7 @@ local function networkListenerGetMyCrystals( event )
 			    align = "left"  -- Alignment parameter
 			}
 		 	
-	 		local yVal = 20*i -- 30 is slightly less than double 16 font 
+	 		local yVal = 60*i -60-- 30 is slightly less than double 16 font 
 	 		local listText = display.newText( options )
 			-- listText:setFillColor( colorBlue.r,colorBlue.g,colorBlue.b )
 			listText:setFillColor( unpack(color.blue) )
@@ -90,15 +129,60 @@ local function networkListenerGetMyCrystals( event )
 			listImage.y = yVal
 			listImage:scale( 0.5, 0.5 )
 
+			local wholesaleButton = widget.newButton(
+			    {
+			        label = "button",
+			        onRelease = function( event ) handleWholesaleButtonEvent( event, line._id ) end ,
+			        emboss = false,
+			        -- Properties for a rounded rectangle button
+			        shape = "roundedRect",
+			        width = 100,
+			        height = 20,
+			        cornerRadius = 2,
+			        fillColor = { default=color.btnFill, over=color.btnFillOver },
+			        strokeColor = { default=color.btnStroke, over=color.btnStrokeOver},
+				    labelColor = { default=color.btnLabel, over=color.btnLabelOver },
+			        strokeWidth = 4
+			    }
+			)
+			wholesaleButton.x = display.contentCenterX-70
+			wholesaleButton.y = yVal + 45
+			wholesaleButton:setLabel( "Wholesale" )
+
+			local auctionButton = widget.newButton(
+			    {
+			        label = "button",
+			        onEvent = handleAuctionButtonEvent,
+			        emboss = false,
+			        -- Properties for a rounded rectangle button
+			        shape = "roundedRect",
+			        width = 100,
+			        height = 20,
+			        cornerRadius = 2,
+			        fillColor = { default=color.btnFill, over=color.btnFillOver },
+			        strokeColor = { default=color.btnStroke, over=color.btnStrokeOver},
+				    labelColor = { default=color.btnLabel, over=color.btnLabelOver },
+			        strokeWidth = 4
+			    }
+			)
+			auctionButton.x = display.contentCenterX+70
+			auctionButton.y = yVal + 45
+			auctionButton:setLabel( "Auction" )
+			-- sceneGroup:insert( gotoGameButton )
+
 			local listGroup = display.newGroup()
 			listGroup:insert( listText )
 			listGroup:insert( listText2 )
 			listGroup:insert( listImage )
+			listGroup:insert( wholesaleButton )
+			listGroup:insert( auctionButton )
 			scrollView:insert( listGroup )
 
 		end
 		-- -- print("decide: #: " #decode .. "," .. decode)
     end
+	print ("after scrollView.numChildren: ",scrollView.numChildren)
+
 end
 
 local function sendMyCrystalsPOSTRequest(  )
@@ -162,20 +246,21 @@ function scene:create( event )
 
 	--your code here; define display objects, sprites, physics bodies, etc - but don't play any sounds or animations yet. 
 	-- Create the widget
-	myWidth = display.contentWidth - 10
-	scrollView = widget.newScrollView(
-	    {
-	        top = 40,
-	        left = 5,
-	        width = myWidth,
-	        height = display.contentHeight-40,
-	        scrollWidth = myWidth,
-	        scrollHeight = 800,
-	        listener = scrollListener,
-	        horizontalScrollDisabled = true,
-	        backgroundColor = { unpack(color.scrollview) }
-	    }
-	)
+	-- refreshScrollView()
+	-- myWidth = display.contentWidth - 10
+	-- scrollView = widget.newScrollView(
+	--     {
+	--         top = 40,
+	--         left = 5,
+	--         width = myWidth,
+	--         height = display.contentHeight-40,
+	--         scrollWidth = myWidth,
+	--         scrollHeight = 800,
+	--         listener = scrollListener,
+	--         horizontalScrollDisabled = true,
+	--         backgroundColor = { unpack(color.scrollview) }
+	--     }
+	-- )
  -- 	local xVal = display.contentCenterX
  -- 	print ("xVal: ", display.contentCenterX , display.contentWidth)
  -- 	-- loval yVal = 0

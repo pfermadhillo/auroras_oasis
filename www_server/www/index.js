@@ -76,6 +76,25 @@ function getRndGPSRndMethod(){
   }
 }
 
+function generateCrystal(me=false,token=null){
+  var crystalElem, gps = {}
+  if(me){
+    gps = getRndGPSNearMe()
+  }else{
+    gps = getRndGPSinTexas()
+  }
+  var type = getRndInteger(1,crystalArray.arr.length)
+  crystalElem = crystalArray.arr[type-1]
+  // console.log("crystalElem:", crystalElem)
+  crystalElem.lat = gps.lat
+  crystalElem.long = gps.long
+  crystalElem.condition = "meh"
+  crystalElem.grading = getRndInteger(1,40) + getRndInteger(0,60)
+  crystalElem.token = token
+
+  return new Crystal(crystalElem);
+}
+
 MongoClient.connect(config.db, (err, client) => {
   if (err) return console.error(err)
   console.log('Connected to Database')
@@ -103,27 +122,8 @@ MongoClient.connect(config.db, (err, client) => {
   function inventCountCrystals(res, count=10, me=false, didDelete=""){
     bulkUpdateOps = [];  
     for (var i = 0; i < count; i++) {
-      var crystalElem, gps = {}
-      if(me){
-        gps = getRndGPSNearMe()
-      }else{
-        gps = getRndGPSinTexas()
-      }
-
-
-
-      // crystalElem.lat = getRndGPSinM(30.6389954, 1000)
-      // crystalElem.long = getRndGPSinM(-97.6856937, 1000)
-      var type = getRndInteger(1,crystalArray.arr.length)
-      crystalElem = crystalArray.arr[type-1]
-      console.log("crystalElem:", crystalElem)
-      crystalElem.lat = gps.lat
-      crystalElem.long = gps.long
-      crystalElem.condition = "meh"
-      crystalElem.grading = getRndInteger(1,40) + getRndInteger(0,60)
-      // crystalElem.timeCreated = Date.now()
-
-      const crystal = new Crystal(crystalElem);
+      
+      const crystal = generateCrystal(me)
 
       bulkUpdateOps.push({ "insertOne": { "document": crystal } });
     }
@@ -303,63 +303,6 @@ MongoClient.connect(config.db, (err, client) => {
     inventCountCrystals(res, count, me)
   })
 
-  app.get('/inventSomeCrystals', (req, res) => {
-    // res.send('phone app made a get request!')
-    // var crystalElem = {}
-    // crystalElem.lat = getRndGPSinM(30.6389954, 1000)
-    // crystalElem.long = getRndGPSinM(-97.6856937, 1000)
-    // crystalElem.timeCreated = Date.now()
-
-    // // create an array of documents to insert
-    // const docs = [
-    //   { name: "cake", healthy: false },
-    //   { name: "lettuce", healthy: true },
-    //   { name: "donut", healthy: false }
-    // ];
-    // // this option prevents additional documents from being inserted if one fails
-    // const options = { ordered: true };
-    // const result = await foods.insertMany(docs, options);
-    // console.log(`${result.insertedCount} documents were inserted`);
-
-    bulkUpdateOps = [];  
-
-    for (var i = 0; i < 10; i++) {
-      var crystalElem = {}
-      crystalElem.lat = getRndGPSinM(30.6389954, 1000)
-      crystalElem.long = getRndGPSinM(-97.6856937, 1000)
-      crystalElem.type = getRndInteger(1,2)
-      crystalElem.timeCreated = Date.now()
-
-      bulkUpdateOps.push({ "insertOne": { "document": crystalElem } });
-
-    }
-
-    // entries.forEach(function(doc) {
-    //     bulkUpdateOps.push({ "insertOne": { "document": doc } });
-
-    //     // if (bulkUpdateOps.length === 1000) {
-    //     //     collection.bulkWrite(bulkUpdateOps).then(function(r) {
-    //     //         // do something with result
-    //     //     });
-    //     //     bulkUpdateOps = [];
-    //     // }
-    // })
-
-    if (bulkUpdateOps.length > 0) {
-      crystalColl.bulkWrite(bulkUpdateOps).then(function(r) {
-          // do something with result
-        console.log("inventSomeCrystals: ",r);
-        res.send('Invented some crystals!');
-      });
-    }
-
-    // crystalColl.insertOne(crystalElem)
-    //   .then(result => {
-    //     // res.send('welcome, ' + req.body.username)
-    //     res.json(req.body)
-    //   })
-    //   .catch(error => console.error(error))
-  })
 
   app.get('/sendDelete', (req, res) => {
     console.log("sendDelete query: ",req.query)
@@ -406,6 +349,67 @@ MongoClient.connect(config.db, (err, client) => {
     // // send.res
   })
 
+
+
+  app.get('/sendWholesale', (req, res) => {
+    console.log("sendWholesale query: ",req.query)
+    if(req.query && req.query.id){
+      var id = ObjectId(req.query.id)
+      ownedCrystalColl.find({ "_id": id }).toArray()
+      .then(result => {
+        // will do transfer to other db here
+        console.log("sendWholesale find result: ",result);
+        if(result[0].token){
+          // result[0].token = req.query.token
+          // ownedCrystalColl.insertOne(result[0])
+          // UPDATE user stats with money from sale
+        }
+        
+        ownedCrystalColl.deleteOne({ "_id": id  })
+          .then(result => {
+          console.log("sendDelete result:", result)
+          if (result.deletedCount) {
+            res.send(req.query.id)
+          }
+        })
+        .catch(error => console.error(error))
+      })
+      .catch(error => console.error(error))
+    }
+  })
+
+  app.get('/giveTestCrystals', (req, res) => {
+    // console.log("giveTestCrystals query: ",req.query)
+    var count = 1
+    // console.log("query: ",req.query)
+    if(req.query){
+      if(req.query.count){
+        count = req.query.count
+      }
+    }
+
+    var token = "dc3a55f751e8b15f4d14de90b2036135c75cb285ffdb48469d5ac996f8650258983cb36acb225dd42ac595a2be81fb62e9e5948304304a7f8628c8e7784b48e4"
+
+    // var crystal = generateCrystal(false,token)
+    // console.log("giveTestCrystals: ",crystal)
+    // ownedCrystalColl.insertOne(crystal)
+  
+    bulkUpdateOps = [];  
+    for (var i = 0; i < count; i++) {
+      
+      const crystal = generateCrystal(false,token)
+
+      bulkUpdateOps.push({ "insertOne": { "document": crystal } });
+    }
+
+    if (bulkUpdateOps.length > 0) {
+      ownedCrystalColl.bulkWrite(bulkUpdateOps).then(function(r) {
+          // do something with result
+        console.log("giveTestCrystals(): ",r);
+        res.send('giveTestCrystals count crystals, '+count);
+      });
+    }
+  })
 
   app.post('/postMyCrystals', function(req, res) {
     // Capture the input fields

@@ -428,7 +428,7 @@ function scene:show( event )
 			myMap.mapType = "standard" 
 			myMap.x = display.contentCenterX 
 			-- navBar height is 52 per api doc // deleted!
-			myMap.y = display.contentCenterY 
+			myMap.y = display.contentCenterY -10
 			local currentLocation = maplocationHandler() 
 			-- local myText = display.newText( "Hello World!", 100, 20, native.systemFont, 16 )
 			-- myText:setFillColor( 1, 0, 0 )

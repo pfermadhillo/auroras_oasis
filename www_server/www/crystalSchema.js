@@ -6,6 +6,7 @@ const { Schema } = mongoose;
 const crystalSchema = new Schema({
   name:  String, // String is shorthand for {type: String}
   filename: String,
+  token: String,
   type: {
     type: Number,
     min: 1
